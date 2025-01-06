@@ -3,80 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Preloaded Excel File</title>
+    <title>Excel Search Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        label {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        #search {
+            padding: 10px;
+            width: 300px;
+            font-size: 1em;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        #result p {
+            margin: 10px 0;
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+        }
+        #result p:hover {
+            background-color: #e0ffe0;
+            border-color: #4CAF50;
+        }
+    </style>
 </head>
 <body>
-    <h1>Search in Preloaded Excel File</h1>
-    <label for="search">Search for a Number:</label>
-    <input type="text" id="search" placeholder="Enter number to search">
+    <h1>Excel Search Tool</h1>
+
+    <!-- Search Box -->
+    <label for="search">Search for a Value:</label>
+    <input type="text" id="search" placeholder="Enter a value to search">
     <button onclick="searchExcel()">Search</button>
     <br><br>
+
+    <!-- Results Section -->
     <div id="result"></div>
 
     <script>
+        const rawGitHubURL = "https://nesco177.github.io/excel-search-app/List.xlsx"; // Replace with your actual GitHub raw URL
         let excelData = [];
 
-        // Fetch the pre-uploaded Excel file from the server
-        fetch('https://nesco177.github.io/excel-search-app/List.xlsx') // Replace with the actual file URL
-            .then(response => response.arrayBuffer())
-            .then(data => {
-                const workbook = XLSX.read(data, { type: 'array' });
+        // Automatically Load Excel File from GitHub
+        async function loadExcelFile() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Loading Excel file...';
 
-                // Assuming data is in the first sheet
+            try {
+                const response = await fetch(rawGitHubURL);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch the file. Ensure the URL is correct and publicly accessible.');
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+
+                // Assume data is in the first sheet
                 const sheetName = workbook.SheetNames[0];
                 const sheet = workbook.Sheets[sheetName];
+
+                // Convert sheet data to JSON format
                 excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                alert('Excel file loaded successfully!');
-            })
-            .catch(error => {
-                console.error('Error fetching the Excel file:', error);
-            });
-
-        // Function to search the Excel data
-        function searchExcel() {
-    const searchValue = document.getElementById('search').value.trim();
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = '';
-
-    // Check if the Excel file is loaded
-    if (excelData.length === 0) {
-        resultDiv.textContent = 'Please wait for the file to load before searching.';
-        return;
-    }
-
-    // Check if the search term is valid
-    if (!searchValue) {
-        resultDiv.textContent = 'Please enter a valid search term.';
-        return;
-    }
-
-    // Search for the value in any cell of each row
-    let found = false;
-    for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip the header row
-        if (excelData[i].some(cell => cell && cell.toString().includes(searchValue))) {
-            found = true;
-            resultDiv.innerHTML += '<h3>Matching Row:</h3>';
-            const table = document.createElement('table');
-            table.border = '1';
-
-            // Create a row for the matching result
-            const row = table.insertRow();
-            excelData[i].forEach(cell => {
-                const cellElement = row.insertCell();
-                cellElement.textContent = cell;
-            });
-
-            resultDiv.appendChild(table);
+                resultDiv.textContent = 'Excel file loaded successfully!';
+                console.log('Excel data loaded:', excelData); // Debugging
+            } catch (error) {
+                console.error(error);
+                resultDiv.textContent = 'Error loading file. Please check the GitHub raw URL.';
+            }
         }
-    }
 
-    if (!found) {
-        resultDiv.textContent = 'No matching record found.';
-    }
-}
+        // Call the function to load the file automatically
+        loadExcelFile();
 
+        // Search Function
+        function searchExcel() {
+            const searchValue = document.getElementById('search').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            // Check if the Excel file is loaded
+            if (excelData.length === 0) {
+                resultDiv.textContent = 'The Excel file is not loaded yet. Please wait.';
+                return;
+            }
+
+            // Check if the search term is valid
+            if (!searchValue) {
+                resultDiv.textContent = 'Please enter a valid search term.';
+                return;
+            }
+
+            console.log('Search term:', searchValue); // Debugging step
+
+            // Search for the exact value in any cell of each row
+            let found = false;
+            for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip the header row
+                if (excelData[i].some(cell => cell && cell.toString() === searchValue)) {
+                    found = true;
+
+                    // Display content from column "K" (11th column, index 10)
+                    const kColumnValue = excelData[i][10]; // Index 10 corresponds to column K (zero-based index)
+                    if (kColumnValue) {
+                        const paragraph = document.createElement('p');
+                        paragraph.textContent = `Consumer No: ${kColumnValue}`;
+                        paragraph.onclick = () => copyToClipboard(kColumnValue);
+                        resultDiv.appendChild(paragraph);
+                    } else {
+                        const paragraph = document.createElement('p');
+                        paragraph.textContent = 'Consumer No: (No value found in Column K)';
+                        resultDiv.appendChild(paragraph);
+                    }
+                }
+            }
+
+            if (!found) {
+                resultDiv.textContent = 'No matching record found.';
+            }
+        }
+
+        // Copy to Clipboard Function with Fallback
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .catch(() => fallbackCopy(text)); // Fallback if the Clipboard API fails
+            } else {
+                fallbackCopy(text); // Fallback method if Clipboard API is not available
+            }
+        }
+
+        function fallbackCopy(text) {
+            // Create a temporary input element
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px'; // Hide off-screen
+            document.body.appendChild(tempInput);
+
+            // Select and copy the text
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); // For mobile compatibility
+            document.execCommand('copy');
+
+            // Remove the temporary input element
+            document.body.removeChild(tempInput);
+        }
     </script>
 </body>
 </html>
