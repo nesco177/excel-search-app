@@ -18,7 +18,7 @@
         let excelData = [];
 
         // Fetch the pre-uploaded Excel file from the server
-        fetch('https://example.com/path-to-your-excel-file.xlsx') // Replace with the actual file URL
+        fetch('https://nesco177.github.io/excel-search-app/List.xlsx') // Replace with the actual file URL
             .then(response => response.arrayBuffer())
             .then(data => {
                 const workbook = XLSX.read(data, { type: 'array' });
