@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Preloaded Excel File</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Search in Preloaded Excel File</h1>
+    <label for="search">Search for a Number:</label>
+    <input type="text" id="search" placeholder="Enter number to search">
+    <button onclick="searchExcel()">Search</button>
+    <br><br>
+    <div id="result"></div>
+
+    <script>
+        let excelData = [];
+
+        // Fetch the pre-uploaded Excel file from the server
+        fetch('https://example.com/path-to-your-excel-file.xlsx') // Replace with the actual file URL
+            .then(response => response.arrayBuffer())
+            .then(data => {
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Assuming data is in the first sheet
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                alert('Excel file loaded successfully!');
+            })
+            .catch(error => {
+                console.error('Error fetching the Excel file:', error);
+            });
+
+        // Function to search the Excel data
+        function searchExcel() {
+            const searchValue = document.getElementById('search').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            if (!searchValue || excelData.length === 0) {
+                resultDiv.textContent = 'Please enter a valid search term or wait for the file to load.';
+                return;
+            }
+
+            // Search for the value in the first column
+            for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip header row
+                if (excelData[i][0] == searchValue) {
+                    resultDiv.innerHTML = '<h3>Search Result:</h3>';
+                    const table = document.createElement('table');
+                    table.border = '1';
+
+                    // Create a row for the result
+                    const row = table.insertRow();
+                    excelData[i].forEach(cell => {
+                        const cellElement = row.insertCell();
+                        cellElement.textContent = cell;
+                    });
+
+                    resultDiv.appendChild(table);
+                    return;
+                }
+            }
+
+            resultDiv.textContent = 'No matching record found.';
+        }
+    </script>
+</body>
+</html>
