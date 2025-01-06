@@ -3,36 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Search Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            line-height: 1.6;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         h1 {
-            text-align: center;
             color: #4CAF50;
+            font-size: 1.8em;
         }
         label {
-            font-size: 1.2em;
+            font-size: 1.1em;
             margin-right: 10px;
         }
         #search {
-            padding: 10px;
-            width: 300px;
-            font-size: 1em;
+            padding: 8px;
+            width: 250px;
+            font-size: 0.95em;
             border: 2px solid #4CAF50;
             border-radius: 5px;
+            margin-bottom: 10px;
         }
         button {
-            padding: 10px 20px;
-            font-size: 1em;
+            padding: 8px 18px;
+            font-size: 0.95em;
             color: white;
             background-color: #4CAF50;
             border: none;
-            border-radius: 5px;
+            border-radius: 0px;
             cursor: pointer;
         }
         button:hover {
@@ -40,13 +43,17 @@
         }
         #result {
             margin-top: 20px;
-            padding: 15px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             background-color: #f9f9f9;
+            width: 70%;
+            max-width: 500px;
+            text-align: center; /* Center the result text */
+            min-height: 30px; /* Reduced height for the result box */
         }
         #result p {
-            margin: 10px 0;
+            margin: 5px 0;
             cursor: pointer;
             padding: 5px;
             border: 1px solid transparent;
@@ -56,19 +63,30 @@
             background-color: #e0ffe0;
             border-color: #4CAF50;
         }
+        #loading {
+            display: inline-block;
+            padding: 4px;
+            margin: 10px;
+            font-size: 0.95em;
+            background-color: #f1f1f1;
+            border: 2px solid #4CAF50;
+            border-radius: px;
+            text-align: center;
+            width: auto;
+            min-width: 200px;
+        }
     </style>
 </head>
 <body>
-    <h1>Excel Search Tool</h1>
 
     <!-- Search Box -->
-    <label for="search">Search for a Value:</label>
-    <input type="text" id="search" placeholder="Enter a value to search">
+    <input type="text" id="search" placeholder="Enter Postpaid Meter No">
     <button onclick="searchExcel()">Search</button>
-    <br><br>
-
+    
     <!-- Results Section -->
-    <div id="result"></div>
+    <div id="result">
+        <div id="loading" style="display: none;">Loading Excel file...</div>
+    </div>
 
     <script>
         const rawGitHubURL = "https://nesco177.github.io/excel-search-app/List.xlsx"; // Replace with your actual GitHub raw URL
@@ -77,7 +95,8 @@
         // Automatically Load Excel File from GitHub
         async function loadExcelFile() {
             const resultDiv = document.getElementById('result');
-            resultDiv.textContent = 'Loading Excel file...';
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.style.display = 'inline-block'; // Show loading message
 
             try {
                 const response = await fetch(rawGitHubURL);
@@ -95,11 +114,14 @@
                 // Convert sheet data to JSON format
                 excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                resultDiv.textContent = 'Excel file loaded successfully!';
+                // Update loading and result
+                loadingDiv.style.display = 'none'; // Hide loading message
+                resultDiv.innerHTML = '<p>Excel file loaded successfully!</p>'; // Show the success message
                 console.log('Excel data loaded:', excelData); // Debugging
             } catch (error) {
                 console.error(error);
-                resultDiv.textContent = 'Error loading file. Please check the GitHub raw URL.';
+                loadingDiv.style.display = 'none'; // Hide loading message
+                resultDiv.innerHTML = '<p>Error loading file. Please check the GitHub raw URL.</p>'; // Show error message
             }
         }
 
@@ -110,17 +132,17 @@
         function searchExcel() {
             const searchValue = document.getElementById('search').value.trim();
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '';
+            resultDiv.innerHTML = ''; // Clear the result area
 
             // Check if the Excel file is loaded
             if (excelData.length === 0) {
-                resultDiv.textContent = 'The Excel file is not loaded yet. Please wait.';
+                resultDiv.innerHTML = '<p>The Excel file is not loaded yet. Please wait.</p>';
                 return;
             }
 
             // Check if the search term is valid
             if (!searchValue) {
-                resultDiv.textContent = 'Please enter a valid search term.';
+                resultDiv.innerHTML = '<p>Please enter a valid search term.</p>';
                 return;
             }
 
@@ -148,7 +170,7 @@
             }
 
             if (!found) {
-                resultDiv.textContent = 'No matching record found.';
+                resultDiv.innerHTML = '<p>No matching record found.</p>';
             }
         }
 
