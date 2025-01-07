@@ -166,7 +166,9 @@
                         paragraph.textContent = 'Consumer No: (No value found in Column K)';
                     }
                     
-                    paragraph.onclick = () => copyToClipboard(kColumnValue);
+                    paragraph.onclick = () => {
+                        copyToClipboardAndRedirect(kColumnValue);
+                    };
                     resultDiv.appendChild(paragraph);
                 }
             }
@@ -176,31 +178,29 @@
             }
         }
 
-        // Copy to Clipboard Function with Fallback
-        function copyToClipboard(text) {
+        // Copy to Clipboard and Open URL in New Tab
+        function copyToClipboardAndRedirect(text) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text)
-                    .catch(() => fallbackCopy(text)); // Fallback if the Clipboard API fails
+                    .then(() => {
+                        window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
+                    })
+                    .catch(() => fallbackCopyAndRedirect(text));
             } else {
-                fallbackCopy(text); // Fallback method if Clipboard API is not available
+                fallbackCopyAndRedirect(text);
             }
         }
 
-        function fallbackCopy(text) {
-            // Create a temporary input element
+        function fallbackCopyAndRedirect(text) {
             const tempInput = document.createElement('textarea');
             tempInput.value = text;
             tempInput.style.position = 'absolute';
-            tempInput.style.left = '-9999px'; // Hide off-screen
+            tempInput.style.left = '-9999px';
             document.body.appendChild(tempInput);
-
-            // Select and copy the text
             tempInput.select();
-            tempInput.setSelectionRange(0, 99999); // For mobile compatibility
             document.execCommand('copy');
-
-            // Remove the temporary input element
             document.body.removeChild(tempInput);
+            window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
         }
     </script>
 </body>
