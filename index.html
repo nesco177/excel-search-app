@@ -86,11 +86,11 @@
     
     <!-- Results Section -->
     <div id="result">
-        <div id="loading" style="display: none;">Loading Excel file...</div>
+        <div id="loading" style="display: none;">Loading...</div>
     </div>
 
     <script>
-        const rawGitHubURL = "https://nesco177.github.io/excel-search-app/List.xlsx"; // Replace with your actual GitHub raw URL
+        const rawGitHubURL = "https://nesco177.github.io/excel-search-app/List.xlsx"; 
         let excelData = [];
 
         // Automatically Load Excel File from GitHub
@@ -117,7 +117,7 @@
 
                 // Update loading and result
                 loadingDiv.style.display = 'none'; // Hide loading message
-                resultDiv.innerHTML = '<p>Excel file loaded successfully!</p>'; // Show the success message
+                resultDiv.innerHTML = '<p>✅ Ready</p>'; // Show the success message
                 console.log('Excel data loaded:', excelData); // Debugging
             } catch (error) {
                 console.error(error);
