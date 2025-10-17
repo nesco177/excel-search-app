@@ -7,12 +7,15 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 5px;
+            top: 200px;
+            bottom: 70px;
+            width: 100%;
+            position: fixed;
             line-height: 1.6;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f4f7f6;
+            background-color: transparent;
         }
 
         #search {
@@ -41,16 +44,17 @@
         }
 
         #result {
-            margin-top: 60px;
+            margin-top: 10px;
             padding: 0px; /* Reduced the padding to decrease background height */
-            width: 100%;
-            max-width: 400px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 500px;
+            background-color: transparent;
             border-radius: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: 500px;
+            overflow-y: auto; /* Enable vertical scrolling */
         }
 
         .result-card {
@@ -59,7 +63,7 @@
             margin: 15px 0;
             border-radius: 8px;
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
+            width: 80%;
             max-width: 400px;
             text-align: left;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -93,162 +97,180 @@
             color: #000000; /* Green text color */
             display: inline-block;
         }
+
+        .back-button {
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Search Box -->
-    <input type="text" id="search" placeholder="Enter Postpaid Meter No">
-    <button onclick="searchExcel()">Search</button>
-    
-    <!-- Results Section -->
-    <div id="result">
-        <div id="loading" style="display: none;">Loading...</div>
-    </div>
+<!-- Search Box -->
+<input type="text" id="search" placeholder="Enter Postpaid Meter No">
+<button onclick="searchExcel()">Search</button>
 
-    <script>
-        const excelURL = "https://raw.githubusercontent.com/nesco177/excel-search-app/main/List.xls"; // Raw GitHub URL
-        let excelData = [];
+<!-- Results Section -->
+<div id="result">
+    <div id="loading" style="display: none;">Loading...</div>
+</div>
 
-        // Load Excel File from the provided raw GitHub URL
-        async function loadExcelFile() {
-            const resultDiv = document.getElementById('result');
-            const loadingDiv = document.getElementById('loading');
-            loadingDiv.style.display = 'inline-block'; // Show loading message
+<script>
+    const excelURL = "https://raw.githubusercontent.com/nesco177/excel-search-app/main/List.xls"; // Raw GitHub URL
+    let excelData = [];
 
-            try {
-                const response = await fetch(excelURL);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch the file. Ensure the URL is correct and publicly accessible.');
-                }
+    // Load Excel File from the provided raw GitHub URL
+    async function loadExcelFile() {
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+        loadingDiv.style.display = 'inline-block'; // Show loading message
 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+        try {
+            const response = await fetch(excelURL);
+            if (!response.ok) {
+                throw new Error('Failed to fetch the file. Ensure the URL is correct and publicly accessible.');
+            }
 
-                // Assume data is in the first sheet
-                const sheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
 
-                // Convert sheet data to JSON format
-                excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            // Assume data is in the first sheet
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
 
-                // Update loading and result
-                loadingDiv.style.display = 'none'; // Hide loading message
-                resultDiv.innerHTML = '<p>✅ Ready</p>'; // Show the success message
-                console.log('Excel data loaded:', excelData); // Debugging
-            } catch (error) {
-                console.error(error);
-                loadingDiv.style.display = 'none'; // Hide loading message
-                resultDiv.innerHTML = '<p>Error loading file. Please check the URL.</p>';
+            // Convert sheet data to JSON format
+            excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            // Update loading and result
+            loadingDiv.style.display = 'none'; // Hide loading message
+            resultDiv.innerHTML = '<p>✅ Ready</p>'; // Show the success message
+            console.log('Excel data loaded:', excelData); // Debugging
+        } catch (error) {
+            console.error(error);
+            loadingDiv.style.display = 'none'; // Hide loading message
+            resultDiv.innerHTML = '<p>Error loading file. Please check the URL.</p>';
+        }
+    }
+
+    // Call the function to load the file automatically
+    loadExcelFile();
+
+    // Search Function
+    function searchExcel() {
+        const searchValue = document.getElementById('search').value.trim().toLowerCase();
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = ''; // Clear the result area
+
+        // Check if the Excel file is loaded
+        if (excelData.length === 0) {
+            resultDiv.innerHTML = '<p>Not ready yet. Please wait.</p>';
+            return;
+        }
+
+        // Check if the search term is valid
+        if (!searchValue) {
+            resultDiv.innerHTML = '<p>Please enter a valid search term.</p>';
+            return;
+        }
+
+        console.log('Search term:', searchValue); // Debugging step
+
+        let found = false;
+        for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip the header row
+            const row = excelData[i];
+            const colEValue = (row[4] || "").toString().trim().toLowerCase(); // Column E (Meter No)
+            const colBValue = (row[1] || "").toString().trim().toLowerCase(); // Column B (Consumer No)
+            const colOValue = (row[14] || "").toString().trim().toLowerCase(); // Column O (Account)
+
+            // Check for exact match in ColB or ColO
+            if (colBValue === searchValue || colOValue === searchValue) {
+                found = true;
+
+                // Display the details for the matched row
+                const resultCard = document.createElement('div');
+                resultCard.classList.add('result-card');
+                resultCard.innerHTML = `
+                    <p><span class="consumer-no">${row[1]}</span></p>
+                    <p><strong>Name:</strong> ${row[2]}</p>
+                    <p><strong>Meter No:</strong> ${row[4]}</p>
+                    <p><strong>Book:</strong> ${row[11]}</p>
+                    <p><strong>Account:</strong> ${row[14]}</p>
+                `;
+
+                // Add click event to copy Consumer No and redirect
+                resultCard.querySelector('.consumer-no').onclick = () => {
+                    copyToClipboardAndRedirect(row[1]);
+                };
+
+                resultDiv.appendChild(resultCard);
+            }
+            // Check for partial matches in Column E (Meter No) using indexOf for partial matching
+            else if (colEValue.indexOf(searchValue) !== -1) {
+                found = true;
+
+                // Display the details for the matched row
+                const resultCard = document.createElement('div');
+                resultCard.classList.add('result-card');
+                resultCard.innerHTML = `
+                    <p><span class="consumer-no">${row[1]}</span></p>
+                    <p><strong>Name:</strong> ${row[2]}</p>
+                    <p><strong>Meter No:</strong> ${row[4]}</p>
+                    <p><strong>Book:</strong> ${row[11]}</p>
+                    <p><strong>Account:</strong> ${row[14]}</p>
+                `;
+
+                // Add click event to copy Consumer No and redirect
+                resultCard.querySelector('.consumer-no').onclick = () => {
+                    copyToClipboardAndRedirect(row[1]);
+                };
+
+                resultDiv.appendChild(resultCard);
             }
         }
 
-        // Call the function to load the file automatically
-        loadExcelFile();
-
-        // Search Function
-        function searchExcel() {
-            const searchValue = document.getElementById('search').value.trim().toLowerCase();
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // Clear the result area
-
-            // Check if the Excel file is loaded
-            if (excelData.length === 0) {
-                resultDiv.innerHTML = '<p>Not ready yet. Please wait.</p>';
-                return;
-            }
-
-            // Check if the search term is valid
-            if (!searchValue) {
-                resultDiv.innerHTML = '<p>Please enter a valid search term.</p>';
-                return;
-            }
-
-            console.log('Search term:', searchValue); // Debugging step
-
-            let found = false;
-            for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip the header row
-                const row = excelData[i];
-                const colEValue = (row[4] || "").toString().trim().toLowerCase(); // Column E (Meter No)
-                const colBValue = (row[1] || "").toString().trim().toLowerCase(); // Column B (Consumer No)
-                const colOValue = (row[14] || "").toString().trim().toLowerCase(); // Column O (Account)
-
-                // Check for exact match in ColB or ColO
-                if (colBValue === searchValue || colOValue === searchValue) {
-                    found = true;
-
-                    // Display the details for the matched row
-                    const resultCard = document.createElement('div');
-                    resultCard.classList.add('result-card');
-                    resultCard.innerHTML = ` 
-                        <p><span class="consumer-no">${row[1]}</span></p>
-                        <p><strong>Name:</strong> ${row[2]}</p>
-                        <p><strong>Meter No:</strong> ${row[4]}</p>
-                        <p><strong>Book:</strong> ${row[11]}</p>
-                        <p><strong>Account:</strong> ${row[14]}</p>
-                    `;
-
-                    // Add click event to copy Consumer No and redirect
-                    resultCard.querySelector('.consumer-no').onclick = () => {
-                        copyToClipboardAndRedirect(row[1]);
-                    };
-
-                    resultDiv.appendChild(resultCard);
-                } 
-                // Check for partial matches in Column E (Meter No) using indexOf for partial matching
-                else if (colEValue.indexOf(searchValue) !== -1) {
-                    found = true;
-
-                    // Display the details for the matched row
-                    const resultCard = document.createElement('div');
-                    resultCard.classList.add('result-card');
-                    resultCard.innerHTML = ` 
-                        <p><span class="consumer-no">${row[1]}</span></p>
-                        <p><strong>Name:</strong> ${row[2]}</p>
-                        <p><strong>Meter No:</strong> ${row[4]}</p>
-                        <p><strong>Book:</strong> ${row[11]}</p>
-                        <p><strong>Account:</strong> ${row[14]}</p>
-                    `;
-
-                    // Add click event to copy Consumer No and redirect
-                    resultCard.querySelector('.consumer-no').onclick = () => {
-                        copyToClipboardAndRedirect(row[1]);
-                    };
-
-                    resultDiv.appendChild(resultCard);
-                }
-            }
-
-            if (!found) {
-                resultDiv.innerHTML = '<p>No matching record found.</p>';
-            }
+        if (!found) {
+            resultDiv.innerHTML = '<p>No matching record found.</p>';
         }
+    }
 
-        // Copy to Clipboard and Open URL in New Tab
-        function copyToClipboardAndRedirect(text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text)
-                    .then(() => {
-                        window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
-                    })
-                    .catch(() => fallbackCopyAndRedirect(text));
-            } else {
-                fallbackCopyAndRedirect(text);
-            }
+    // Copy to Clipboard and Open URL in New Tab
+    function copyToClipboardAndRedirect(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
+                })
+                .catch(() => fallbackCopyAndRedirect(text));
+        } else {
+            fallbackCopyAndRedirect(text);
         }
+    }
 
-        // Fallback method if Clipboard API fails
-        function fallbackCopyAndRedirect(text) {
-            const tempInput = document.createElement('textarea');
-            tempInput.value = text;
-            tempInput.style.position = 'absolute';
-            tempInput.style.left = '-9999px';
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
-        }
-    </script>
+    // Fallback method if Clipboard API fails
+    function fallbackCopyAndRedirect(text) {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-9999px';
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        window.open("https://management.nesco.gov.bd/postpaid/bill", "_blank");
+    }
+</script>
+
+<button class="back-button" onclick="window.history.back()">Back</button>
+
 </body>
 </html>
