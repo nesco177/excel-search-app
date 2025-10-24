@@ -129,6 +129,23 @@
     const excelURL = "https://raw.githubusercontent.com/nesco177/excel-search-app/main/List.xls"; // Raw GitHub URL
     let excelData = [];
 
+    // Function to check if file should be reloaded based on time
+    function shouldReloadFile() {
+        const lastLoaded = localStorage.getItem('lastLoaded');
+        const currentTime = new Date();
+
+        if (!lastLoaded) {
+            return true; // First time loading
+        }
+
+        const lastLoadDate = new Date(lastLoaded);
+        const timeDifference = currentTime - lastLoadDate; // Time difference in milliseconds
+        const hoursPassed = timeDifference / (1000 * 60 * 60);
+
+        // Reload file if 24 hours have passed or after 12 AM
+        return hoursPassed >= 24 || currentTime.getHours() === 0;
+    }
+
     // Load Excel File from the provided raw GitHub URL
     async function loadExcelFile() {
         const resultDiv = document.getElementById('result');
@@ -154,7 +171,14 @@
             // Update loading and result
             loadingDiv.style.display = 'none'; // Hide loading message
             resultDiv.innerHTML = '<p>✅ Ready</p>'; // Show the success message
-            console.log('Excel data loaded:', excelData); // Debugging
+
+            // Store the current time in localStorage when the file is loaded
+            const currentTime = new Date().toISOString();
+            localStorage.setItem('lastLoaded', currentTime);
+
+            // Store the data in localStorage for future use
+            localStorage.setItem('excelData', JSON.stringify(excelData));
+
         } catch (error) {
             console.error(error);
             loadingDiv.style.display = 'none'; // Hide loading message
@@ -162,8 +186,18 @@
         }
     }
 
-    // Call the function to load the file automatically
-    loadExcelFile();
+    // Check if the file needs to be loaded
+    if (shouldReloadFile()) {
+        loadExcelFile(); // Load the file if necessary
+    } else {
+        // Load the data from localStorage if it's already loaded today
+        const storedData = localStorage.getItem('excelData');
+        if (storedData) {
+            excelData = JSON.parse(storedData);
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>✅ File is already loaded for today.</p>';
+        }
+    }
 
     // Search Function
     function searchExcel() {
