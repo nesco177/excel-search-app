@@ -45,7 +45,7 @@
 
         #result {
             margin-top: 10px;
-            padding: 0px; /* Reduced the padding to decrease background height */
+            padding: 0px; 
             width: 80%;
             max-width: 500px;
             background-color: transparent;
@@ -54,7 +54,7 @@
             flex-direction: column;
             align-items: center;
             height: 1000px;
-            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-y: auto; 
         }
 
         .result-card {
@@ -94,7 +94,7 @@
         #loading {
             font-size: 1em;
             margin-top: 10px;
-            color: #000000; /* Green text color */
+            color: #000000;
             display: inline-block;
         }
 
@@ -126,31 +126,31 @@
 </div>
 
 <script>
-    const excelURL = "https://raw.githubusercontent.com/nesco177/excel-search-app/main/List.xls"; // Raw GitHub URL
+    const excelURL = "https://raw.githubusercontent.com/nesco177/excel-search-app/main/List.xls"; 
     let excelData = [];
 
-    // Function to check if file should be reloaded based on time
+    
     function shouldReloadFile() {
         const lastLoaded = localStorage.getItem('lastLoaded');
         const currentTime = new Date();
 
         if (!lastLoaded) {
-            return true; // First time loading
+            return true; 
         }
 
         const lastLoadDate = new Date(lastLoaded);
-        const timeDifference = currentTime - lastLoadDate; // Time difference in milliseconds
+        const timeDifference = currentTime - lastLoadDate; 
         const hoursPassed = timeDifference / (1000 * 60 * 60);
 
-        // Reload file if 24 hours have passed or after 12 AM
+        
         return hoursPassed >= 24 ;
     }
 
-    // Load Excel File from the provided raw GitHub URL
+    
     async function loadExcelFile() {
         const resultDiv = document.getElementById('result');
         const loadingDiv = document.getElementById('loading');
-        loadingDiv.style.display = 'inline-block'; // Show loading message
+        loadingDiv.style.display = 'inline-block';
 
         try {
             const response = await fetch(excelURL);
@@ -161,36 +161,36 @@
             const arrayBuffer = await response.arrayBuffer();
             const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
 
-            // Assume data is in the first sheet
+            
             const sheetName = workbook.SheetNames[0];
             const sheet = workbook.Sheets[sheetName];
 
-            // Convert sheet data to JSON format
+            
             excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-            // Update loading and result
-            loadingDiv.style.display = 'none'; // Hide loading message
-            resultDiv.innerHTML = '<p>✅ Ready</p>'; // Show the success message
+            
+            loadingDiv.style.display = 'none'; 
+            resultDiv.innerHTML = '<p>✅ Ready</p>'; 
 
-            // Store the current time in localStorage when the file is loaded
+            
             const currentTime = new Date().toISOString();
             localStorage.setItem('lastLoaded', currentTime);
 
-            // Store the data in localStorage for future use
+            
             localStorage.setItem('excelData', JSON.stringify(excelData));
 
         } catch (error) {
             console.error(error);
-            loadingDiv.style.display = 'none'; // Hide loading message
+            loadingDiv.style.display = 'none'; 
             resultDiv.innerHTML = '<p>Error loading file. Please check the URL.</p>';
         }
     }
 
-    // Check if the file needs to be loaded
+    
     if (shouldReloadFile()) {
-        loadExcelFile(); // Load the file if necessary
+        loadExcelFile(); 
     } else {
-        // Load the data from localStorage if it's already loaded today
+       
         const storedData = localStorage.getItem('excelData');
         if (storedData) {
             excelData = JSON.parse(storedData);
@@ -199,38 +199,38 @@
         }
     }
 
-    // Search Function
+    
     function searchExcel() {
         const searchValue = document.getElementById('search').value.trim().toLowerCase();
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = ''; // Clear the result area
+        resultDiv.innerHTML = ''; 
 
-        // Check if the Excel file is loaded
+        
         if (excelData.length === 0) {
             resultDiv.innerHTML = '<p>Not ready yet. Please wait.</p>';
             return;
         }
 
-        // Check if the search term is valid
+        
         if (!searchValue) {
             resultDiv.innerHTML = '<p>Please enter a valid search term.</p>';
             return;
         }
 
-        console.log('Search term:', searchValue); // Debugging step
+        console.log('Search term:', searchValue); 
 
         let found = false;
-        for (let i = 1; i < excelData.length; i++) { // Start from 1 to skip the header row
+        for (let i = 1; i < excelData.length; i++) { 
             const row = excelData[i];
-            const colEValue = (row[4] || "").toString().trim().toLowerCase(); // Column E (Meter No)
-            const colBValue = (row[1] || "").toString().trim().toLowerCase(); // Column B (Consumer No)
-            const colOValue = (row[14] || "").toString().trim().toLowerCase(); // Column O (Account)
+            const colEValue = (row[4] || "").toString().trim().toLowerCase(); 
+            const colBValue = (row[1] || "").toString().trim().toLowerCase(); 
+            const colOValue = (row[14] || "").toString().trim().toLowerCase(); 
 
-            // Check for exact match in ColB or ColO
+            
             if (colBValue === searchValue || colOValue === searchValue) {
                 found = true;
 
-                // Display the details for the matched row
+                
                 const resultCard = document.createElement('div');
                 resultCard.classList.add('result-card');
                 resultCard.innerHTML = `
@@ -241,18 +241,18 @@
                     <p><strong>Account:</strong> ${row[14]}</p>
                 `;
 
-                // Add click event to copy Consumer No and redirect
+               
                 resultCard.querySelector('.consumer-no').onclick = () => {
                     copyToClipboardAndRedirect(row[1]);
                 };
 
                 resultDiv.appendChild(resultCard);
             }
-            // Check for partial matches in Column E (Meter No) using indexOf for partial matching
+            
             else if (colEValue.indexOf(searchValue) !== -1) {
                 found = true;
 
-                // Display the details for the matched row
+                
                 const resultCard = document.createElement('div');
                 resultCard.classList.add('result-card');
                 resultCard.innerHTML = `
@@ -263,7 +263,7 @@
                     <p><strong>Account:</strong> ${row[14]}</p>
                 `;
 
-                // Add click event to copy Consumer No and redirect
+                
                 resultCard.querySelector('.consumer-no').onclick = () => {
                     copyToClipboardAndRedirect(row[1]);
                 };
@@ -277,7 +277,7 @@
         }
     }
 
-    // Copy to Clipboard and Open URL in New Tab
+    
     function copyToClipboardAndRedirect(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text)
@@ -290,7 +290,7 @@
         }
     }
 
-    // Fallback method if Clipboard API fails
+    
     function fallbackCopyAndRedirect(text) {
         const tempInput = document.createElement('textarea');
         tempInput.value = text;
@@ -306,5 +306,4 @@
 
 </body>
 </html>
-
 
